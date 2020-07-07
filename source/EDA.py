@@ -48,3 +48,4 @@ print(corr.good[features])
 # Min/max values already scaled between -1 and 1.
 # Remove noise features (sensor_23, sensor_25, sensor_29). Correlation with 'good' < 0.01
 # See how model performs with and without features sensor_19, sensor_27 and sensor_31. Wich have correlation with 'good' < 0.05
+# See how model performs with data natural slaced and scaled between 0 and 1
