@@ -11,6 +11,7 @@ from keras.optimizers import Adam
 from keras.wrappers.scikit_learn import KerasClassifier
 
 # sklearn
+from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
 
@@ -27,27 +28,33 @@ df = pd.read_csv(dataset_path, prefix='sensor_', header=None)
 df['good'] = [1 if s == 'g' else 0 for s in df.sensor_34]
 df.drop('sensor_34', inplace=True, axis=1)
 
-# Scale features
-
-# FEATURE ENGINEERING
-
-# FEATURE SELECTION
-
 # Dropping column sensor_1 for adding no value the dataset
 df.drop('sensor_1', inplace=True, axis=1)
 
 # Noise features to remove
 df.drop(['sensor_23', 'sensor_25','sensor_29'], inplace=True, axis=1)
 
-# Featues with low correlation to test the model with and wothout
-features_1 = ['sensor_19', 'sensor_23', 'sensor_25', 'sensor_27', 'sensor_29', 'sensor_31']
-
-# Train, validation, test split
+# Separating features before scale
 X = df.drop('good', axis=1)
 y = df.good
 print(y.value_counts())
 
-X_train_full, X_test, y_train_full, y_test = train_test_split(X, y==1, stratify=y, test_size=0.3, random_state=123) 
+# Scaling features
+for c in X.columns:
+    print(X[c].describe())
+    X[c] = StandardScaler().fit_transform(X[c].values.reshape(-1,1))
+    print(X[c].describe())
+
+
+# FEATURE ENGINEERING
+
+# FEATURE SELECTION
+
+# Featues with low correlation to test the model with and wothout
+features_1 = ['sensor_19', 'sensor_23', 'sensor_25', 'sensor_27', 'sensor_29', 'sensor_31']
+
+# Train, validation, test split
+X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, stratify=y, test_size=0.3, random_state=123) 
 print(X_train_full.shape, y_train_full.shape)
 print(X_test.shape, y_test.shape)
 
@@ -58,9 +65,9 @@ print(X_val.shape, y_val.shape)
 
 # MODEL
 # parameters grid to search
-neurons = np.arange(16, 128, 16)
-learning_rate = np.logspace(-4, 1, 20)
-epochs = np.arange(100, 1000, 100)
+neurons = np.arange(32, 128, 32)
+learning_rate = np.logspace(-4, 1, 10)
+epochs = np.arange(200, 1000, 200)
 
 # Training with GridSearch on Keras
 input_shape_train_full = (X_train_full.shape[0],)
@@ -71,13 +78,12 @@ param_grid_keras = {
     'epochs' : epochs
 }
 
-
 def get_model(neurons, learning_rate):
     opt = Adam(learning_rate=learning_rate)
     model = Sequential()
-    model.add(Dense(neurons, activation='relu', input_shape=(245,)))
+    model.add(Dense(neurons, activation='relu', input_shape=(30,)))
     model.add(Dense(1, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=[])
+    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy', 'mse'])
     return model
 
 model = KerasClassifier(build_fn=get_model)
