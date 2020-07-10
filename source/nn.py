@@ -9,6 +9,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.wrappers.scikit_learn import KerasClassifier
+from keras.callbacks import EarlyStopping
 
 # sklearn
 from sklearn.preprocessing import StandardScaler
@@ -82,6 +83,7 @@ def get_model(neurons=10, learning_rate=0.001):
 columns = ['neurons', 'learning_rate', 'epochs', 'accuracy', 'mse']
 manual_results = pd.DataFrame(columns=columns)
 
+'''
 for n in neurons:
     for lr in learning_rate:
         for e in epochs:
@@ -94,29 +96,28 @@ for n in neurons:
             print(n, lr, e, acc, mse)
 
 manual_results.to_csv('manual_results.csv')
+'''
 
-# Training with GridSearch on Keras. Didn't work and the issue is still open for discussion
-input_shape_train_full = (X_train_full.shape[1],)
-print(input_shape_train_full)
-param_grid_keras = {
-    #'epochs' : epochs
-    'neurons' : neurons
-    #'learning_rate' : learning_rate
-}
-
-model = KerasClassifier(build_fn=get_model)
-grid = GridSearchCV(estimator=model, param_grid=param_grid_keras, n_jobs=-1)
-grid_results = grid.fit(X_train_full, y_train_full)
-
-results = pd.DataFrame(data=grid_results.cv_results_)
-results.to_csv('resultados_keras.csv')
-print(grid_results.best_estimator_)
-print(grid_results.best_score_)
-print(grid_results.best_params_)
+# Possible best configurations with acc 1 and error ~ 0
+# Neurons: 16, LR: 0.05994842503189409, Epochs: 400.
+# Neurons: 32, LR: 0.7742636826811278, Epochs: 200.
+# Neurons: 48, LR: 2.782559402207126, Epochs: 200.
+# Neurons: 64, LR: 0.05994842503189409, Epochs: 400.
+# Neurons: 80, LR: 0.7742636826811278, Epochs: 100. 
 
 # Early stop and validation on Keras with best training params
-model = get_model()
-history = model.fit(X_train, y_train, epochs=100, validation_data=[X_val, y_val])
+callbacks = EarlyStopping(monitor='val_mse', patience=10)
+model = get_model(16, 0.05994842503189409)
+history = model.fit(X_train, y_train, epochs=400, validation_data=[X_val, y_val], callbacks=[callbacks], verbose=0)
+
+# Plotting history for loss
+plt.plot(history.history['mse'])
+plt.plot(history.history['val_mse'])
+plt.title('model mse')
+plt.ylabel('mse')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
 
 # Plotting history for accuracy
 plt.plot(history.history['accuracy'])
@@ -136,7 +137,27 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
 
-# GridSearch with MLPClassifier ()
+'''
+# Training with GridSearch on Keras. Didn't work and the issue is still open for discussion
+input_shape_train_full = (X_train_full.shape[1],)
+print(input_shape_train_full)
+param_grid_keras = {
+    'neurons' : neurons
+    'learning_rate' : learning_rate,
+    'epochs' : epochs
+}
+
+model = KerasClassifier(build_fn=get_model)
+grid = GridSearchCV(estimator=model, param_grid=param_grid_keras, n_jobs=-1)
+grid_results = grid.fit(X_train_full, y_train_full)
+
+results = pd.DataFrame(data=grid_results.cv_results_)
+results.to_csv('resultados_keras.csv')
+print(grid_results.best_estimator_)
+print(grid_results.best_score_)
+print(grid_results.best_params_)
+
+# GridSearch with MLPClassifier() didn't work either for the problem specifics
 param_grid_sklearn = {
     'hidden_layer_sizes' : neurons,
     'learning_rate_init' : learning_rate,
@@ -164,3 +185,4 @@ mlp = MLPClassifier(early_stopping=True, n_iter_no_change=10, **best_params)
 mlp.fit(X_train_full, y_train_full)
 print('Loss:', mlp.loss_)
 print('Test score:', mlp.score(X_test, y_test))
+'''
