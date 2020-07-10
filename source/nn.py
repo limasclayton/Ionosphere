@@ -6,7 +6,7 @@ sns.set()
 
 # keras
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.callbacks import EarlyStopping
@@ -59,7 +59,6 @@ X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, stratify=y, 
 print(X_train_full.shape, y_train_full.shape)
 print(X_test.shape, y_test.shape)
 
-# This step is necessary only on Keras
 X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
 print(X_train.shape, y_train.shape)
 print(X_val.shape, y_val.shape)
@@ -75,15 +74,19 @@ def get_model(neurons=10, learning_rate=0.001):
     opt = Adam(learning_rate=learning_rate)
     model = Sequential()
     model.add(Dense(neurons, activation='relu', input_shape=(30,)))
+    model.add(Dropout(0.5))
+    model.add(Dense(neurons, activation='relu'))
+    model.add(Dropout(0.5))
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy', 'mse'])
     return model
 
+'''
 # Manually GridSearching
 columns = ['neurons', 'learning_rate', 'epochs', 'accuracy', 'mse']
 manual_results = pd.DataFrame(columns=columns)
 
-'''
+
 for n in neurons:
     for lr in learning_rate:
         for e in epochs:
@@ -99,18 +102,23 @@ manual_results.to_csv('manual_results.csv')
 '''
 
 # Possible best configurations with acc 1 and error ~ 0
-# Neurons: 16, LR: 0.05994842503189409, Epochs: 400.
+# Neurons: 16, LR: 0.05994842503189409, Epochs: 400. Train acc~0.91. Train mse: 0.0677
 # Neurons: 32, LR: 0.7742636826811278, Epochs: 200.
 # Neurons: 48, LR: 2.782559402207126, Epochs: 200.
 # Neurons: 64, LR: 0.05994842503189409, Epochs: 400.
 # Neurons: 80, LR: 0.7742636826811278, Epochs: 100. 
 
 # Early stop and validation on Keras with best training params
-callbacks = EarlyStopping(monitor='val_mse', patience=10)
-model = get_model(16, 0.05994842503189409)
-history = model.fit(X_train, y_train, epochs=400, validation_data=[X_val, y_val], callbacks=[callbacks], verbose=0)
+callbacks = EarlyStopping(monitor='val_mse', patience=100)
+model = get_model(64)
+history = model.fit(X_train, y_train, epochs=500, validation_data=[X_val, y_val], callbacks=[callbacks], verbose=0)
+evaluation = model.evaluate(X_test, y_test)
 
-# Plotting history for loss
+print('Test loss:', evaluation[0])
+print('Test acc:', evaluation[1])
+print('Test mse:', evaluation[2])
+
+# Plotting train history for mse
 plt.plot(history.history['mse'])
 plt.plot(history.history['val_mse'])
 plt.title('model mse')
@@ -119,7 +127,7 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
 
-# Plotting history for accuracy
+# Plotting train history for accuracy
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
 plt.title('model accuracy')
@@ -128,7 +136,7 @@ plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
 
-# Plotting history for loss
+# Plotting train history for loss
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.title('model loss')
