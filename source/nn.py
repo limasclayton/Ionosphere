@@ -15,6 +15,7 @@ from keras.callbacks import EarlyStopping
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.metrics import classification_report, auc, roc_curve, confusion_matrix
 
 # caminhos
 dataset_path = "input/ionosphere.data"
@@ -56,13 +57,13 @@ features_1 = ['sensor_19', 'sensor_27', 'sensor_31']
 df.drop(['sensor_19', 'sensor_27', 'sensor_31'], inplace=True, axis=1)
 
 # Train, validation, test split
-X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, stratify=y, test_size=0.3, random_state=123) 
-print(X_train_full.shape, y_train_full.shape)
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=123) 
+print(X_train.shape, y_train.shape)
 print(X_test.shape, y_test.shape)
 
-X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
-print(X_train.shape, y_train.shape)
-print(X_val.shape, y_val.shape)
+#X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
+#print(X_train.shape, y_train.shape)
+#print(X_val.shape, y_val.shape)
 
 # MODEL
 # parameters grid to search
@@ -111,8 +112,9 @@ manual_results.to_csv('manual_results.csv')
 
 # Early stop and validation on Keras with best training params
 callbacks = EarlyStopping(monitor='val_loss', patience=25)
-model = get_model(16)
-history = model.fit(X_train, y_train, epochs=500, validation_data=[X_val, y_val], callbacks=[callbacks])
+model = get_model(32)
+history = model.fit(X_train, y_train, epochs=500, validation_split=0.1, callbacks=[callbacks], verbose=0)
+
 
 # Plotting train history for mse
 plt.plot(history.history['mse'])
@@ -141,57 +143,37 @@ plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
+# Evaluating the model
 evaluation = model.evaluate(X_test, y_test)
-
 print('Test loss:', evaluation[0])
 print('Test acc:', evaluation[1])
 print('Test mse:', evaluation[2])
-'''
-# Training with GridSearch on Keras. Didn't work and the issue is still open for discussion
-input_shape_train_full = (X_train_full.shape[1],)
-print(input_shape_train_full)
-param_grid_keras = {
-    'neurons' : neurons
-    'learning_rate' : learning_rate,
-    'epochs' : epochs
-}
 
-model = KerasClassifier(build_fn=get_model)
-grid = GridSearchCV(estimator=model, param_grid=param_grid_keras, n_jobs=-1)
-grid_results = grid.fit(X_train_full, y_train_full)
+# METRICS
+# Calculating 
+y_pred = np.round(model.predict(X_test))
+print(classification_report(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
 
-results = pd.DataFrame(data=grid_results.cv_results_)
-results.to_csv('resultados_keras.csv')
-print(grid_results.best_estimator_)
-print(grid_results.best_score_)
-print(grid_results.best_params_)
+# Changing threshold to see if 0 recall increases
+y_pred_threshold = model.predict_proba(X_test) > 0.6
+print(classification_report(y_test, y_pred_threshold))
+print(confusion_matrix(y_test, y_pred_threshold))
 
-# GridSearch with MLPClassifier() didn't work either for the problem specifics
-param_grid_sklearn = {
-    'hidden_layer_sizes' : neurons,
-    'learning_rate_init' : learning_rate,
-    'max_iter' : epochs
-}
-clf = MLPClassifier()
-grid = GridSearchCV(clf, param_grid=param_grid_sklearn, n_jobs=-1)
-grid.fit(X_train_full, y_train_full)
-#print(grid.cv_results_)
-results = pd.DataFrame(data=grid.cv_results_)
-results.to_csv('resultados_sklearn.csv')
-print(grid.best_estimator_)
-print(grid.best_score_)
-print(grid.best_params_)
-#{'hidden_layer_sizes': 80, 'learning_rate_init': 0.1, 'max_iter': 300}
+# Calculating roc_auc curve
+probs = model.predict_proba(X_test)
+print(probs)
+fpr, tpr, threshold = roc_curve(y_test, probs)
+roc_auc = auc(fpr, tpr)
+print(list(zip(tpr,fpr,threshold)))
 
-# Using Early Stop with best params from training
-best_params = {
-    'hidden_layer_sizes': 80,
-    'learning_rate_init': 0.1, 
-    'max_iter': 300, 
-    'random_state':123
-    }
-mlp = MLPClassifier(early_stopping=True, n_iter_no_change=10, **best_params)
-mlp.fit(X_train_full, y_train_full)
-print('Loss:', mlp.loss_)
-print('Test score:', mlp.score(X_test, y_test))
-'''
+# Plotting roc_auc curve
+plt.title('Receiver Operating Characteristic')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.show()
