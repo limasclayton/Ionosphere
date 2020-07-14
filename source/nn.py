@@ -51,8 +51,9 @@ for c in X.columns:
 
 # FEATURE SELECTION
 
-# Featues with low correlation to test the model with and wothout
-features_1 = ['sensor_19', 'sensor_23', 'sensor_25', 'sensor_27', 'sensor_29', 'sensor_31']
+# Featues with low correlation to test the model with and without
+features_1 = ['sensor_19', 'sensor_27', 'sensor_31']
+df.drop(['sensor_19', 'sensor_27', 'sensor_31'], inplace=True, axis=1)
 
 # Train, validation, test split
 X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, stratify=y, test_size=0.3, random_state=123) 
@@ -69,13 +70,13 @@ neurons = np.arange(16, 128, 16)
 learning_rate = np.logspace(-4, 1, 10)
 epochs = np.arange(100, 500, 100)
 
-# funcion that returns a keras model
-def get_model(neurons=10, learning_rate=0.001):
+# Funcion that returns a keras model
+def get_model(neurons=16, learning_rate=0.001):
     opt = Adam(learning_rate=learning_rate)
     model = Sequential()
-    model.add(Dense(neurons, activation='relu', input_shape=(30,)))
+    model.add(Dense(neurons, activation='relu', input_shape=(X_train.shape[1],)))
     model.add(Dropout(0.5))
-    model.add(Dense(neurons, activation='relu'))
+    model.add(Dense(neurons, activation='relu', input_shape=(X_train.shape[1],)))
     model.add(Dropout(0.5))
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy', 'mse'])
@@ -109,14 +110,9 @@ manual_results.to_csv('manual_results.csv')
 # Neurons: 80, LR: 0.7742636826811278, Epochs: 100. 
 
 # Early stop and validation on Keras with best training params
-callbacks = EarlyStopping(monitor='val_mse', patience=100)
-model = get_model(64)
-history = model.fit(X_train, y_train, epochs=500, validation_data=[X_val, y_val], callbacks=[callbacks], verbose=0)
-evaluation = model.evaluate(X_test, y_test)
-
-print('Test loss:', evaluation[0])
-print('Test acc:', evaluation[1])
-print('Test mse:', evaluation[2])
+callbacks = EarlyStopping(monitor='val_loss', patience=25)
+model = get_model(16)
+history = model.fit(X_train, y_train, epochs=500, validation_data=[X_val, y_val], callbacks=[callbacks])
 
 # Plotting train history for mse
 plt.plot(history.history['mse'])
@@ -124,7 +120,7 @@ plt.plot(history.history['val_mse'])
 plt.title('model mse')
 plt.ylabel('mse')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
 # Plotting train history for accuracy
@@ -133,7 +129,7 @@ plt.plot(history.history['val_accuracy'])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
 # Plotting train history for loss
@@ -142,9 +138,14 @@ plt.plot(history.history['val_loss'])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.show()
 
+evaluation = model.evaluate(X_test, y_test)
+
+print('Test loss:', evaluation[0])
+print('Test acc:', evaluation[1])
+print('Test mse:', evaluation[2])
 '''
 # Training with GridSearch on Keras. Didn't work and the issue is still open for discussion
 input_shape_train_full = (X_train_full.shape[1],)
