@@ -56,13 +56,13 @@ features_1 = ['sensor_19', 'sensor_27', 'sensor_31']
 df.drop(['sensor_19', 'sensor_27', 'sensor_31'], inplace=True, axis=1)
 
 # Train, validation, test split
-X_train_full, X_test, y_train_full, y_test = train_test_split(X, y, stratify=y, test_size=0.3, random_state=123) 
-print(X_train_full.shape, y_train_full.shape)
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=123) 
+print(X_train.shape, y_train.shape)
 print(X_test.shape, y_test.shape)
 
-X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
-print(X_train.shape, y_train.shape)
-print(X_val.shape, y_val.shape)
+#X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
+#print(X_train.shape, y_train.shape)
+#print(X_val.shape, y_val.shape)
 
 # MODEL
 # parameters grid to search
@@ -111,8 +111,8 @@ manual_results.to_csv('manual_results.csv')
 
 # Early stop and validation on Keras with best training params
 callbacks = EarlyStopping(monitor='val_loss', patience=25)
-model = get_model(16)
-history = model.fit(X_train, y_train, epochs=500, validation_data=[X_val, y_val], callbacks=[callbacks])
+model = get_model(32)
+history = model.fit(X_train, y_train, epochs=500, validation_split=0.1, callbacks=[callbacks])
 
 # Plotting train history for mse
 plt.plot(history.history['mse'])
@@ -146,6 +146,10 @@ evaluation = model.evaluate(X_test, y_test)
 print('Test loss:', evaluation[0])
 print('Test acc:', evaluation[1])
 print('Test mse:', evaluation[2])
+
+# Metrics
+# precision, recall, f-score, confusion matrix, auc roc curve
+
 '''
 # Training with GridSearch on Keras. Didn't work and the issue is still open for discussion
 input_shape_train_full = (X_train_full.shape[1],)
