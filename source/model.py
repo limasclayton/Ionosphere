@@ -24,10 +24,20 @@ RANDOM_STATE = 1
 # reading data and giving prefix duo to no column names
 df = pd.read_csv(dataset_path, prefix='sensor_', header=None)
 
+
 # PREPROCESS
 # Changing target's name from 'sensor_34' to 'good' and values from bad to 0 and good to 1
 df['good'] = [1 if s == 'g' else 0 for s in df.sensor_34]
 df.drop('sensor_34', inplace=True, axis=1)
+
+'''
+df_scaled = df.drop(['sensor_1','good'], axis=1)
+scaled_values = StandardScaler().fit_transform(df_scaled)
+df_scaled = pd.DataFrame(scaled_values, columns=df_scaled.columns)
+df_scaled['good'] = df.good
+print(df_scaled.info())
+df_scaled.to_csv('ionosphere_scaled.csv', index=False)
+'''
 
 # Dropping column sensor_1 for adding no value the dataset
 df.drop('sensor_1', inplace=True, axis=1)
@@ -79,7 +89,7 @@ print('Logistic Regression pipeline test score: {:.3f}'.format(lr_cv.score(X_tes
 y_pred = lr_cv.predict(X_test)
 print(classification_report(y_test, y_pred))
 print(confusion_matrix(y_test, y_pred))
-'''
+
 
 # SVM Pipeline
 svm_pipe = Pipeline([
@@ -105,8 +115,36 @@ print('SMV pipeline test score: {:.3f}'.format(svm_cv.score(X_test, y_test)))
 y_pred = svm_cv.predict(X_test)
 print(classification_report(y_test, y_pred))
 print(confusion_matrix(y_test, y_pred))
+'''
 
 # Random Forest Classifier
+rf_pipe = Pipeline([
+    ('classifier', RandomForestClassifier())
+    ])
 
+rf_param_grid = [{
+    'classifier__random_state' : [RANDOM_STATE],
+    'classifier__n_jobs' : [-1],
+    'classifier__n_estimators' : [250],
+    #'classifier__n_estimators' : np.arange(100, 500, 50),
+    'classifier__min_samples_split' : [6],
+    #'classifier__min_samples_split' : np.arange(2, 10, 1),
+    'classifier__min_samples_leaf' : [4]
+    #'classifier__min_samples_leaf' : np.arange(1, 10, 1)
+    }]
+
+
+rf_cv = RandomizedSearchCV(rf_pipe, rf_param_grid, n_jobs=-1, cv=10, random_state=RANDOM_STATE)
+rf_cv.fit(X_train, y_train)
+
+print('-' * 100)
+print('RF pipeline train score: {:.3f}'.format(rf_cv.score(X_train, y_train)))
+print('RF pipeline validation score: {0}'.format(rf_cv.best_score_))
+print('RF pipeline best params: {0}'.format(rf_cv.best_params_))
+
+print('RF pipeline test score: {:.3f}'.format(rf_cv.score(X_test, y_test)))
+y_pred = rf_cv.predict(X_test)
+print(classification_report(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
 
 # HistGradientBoost Classifier
