@@ -20,8 +20,6 @@ from sklearn.metrics import classification_report, auc, roc_curve, confusion_mat
 # caminhos
 dataset_path = "input/ionosphere.data"
 
-#names = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','X','Z','AA','AB','AC','AD','AE','AF','AG','AH','AI','target']
-
 # reading data and giving prefix duo to no column names
 df = pd.read_csv(dataset_path, prefix='sensor_', header=None)
 
@@ -61,10 +59,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=
 print(X_train.shape, y_train.shape)
 print(X_test.shape, y_test.shape)
 
-#X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
-#print(X_train.shape, y_train.shape)
-#print(X_val.shape, y_val.shape)
-
 # MODEL
 # parameters grid to search
 neurons = np.arange(16, 128, 16)
@@ -82,33 +76,6 @@ def get_model(neurons=16, learning_rate=0.001):
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy', 'mse'])
     return model
-
-'''
-# Manually GridSearching
-columns = ['neurons', 'learning_rate', 'epochs', 'accuracy', 'mse']
-manual_results = pd.DataFrame(columns=columns)
-
-
-for n in neurons:
-    for lr in learning_rate:
-        for e in epochs:
-            model = get_model(n, lr)
-            history = model.fit(X_train_full, y_train_full, epochs=e)
-            acc = history.history['accuracy'][-1]
-            mse = history.history['mse'][-1]
-            results = pd.DataFrame([[n, lr, e, acc, mse]], columns=columns)
-            manual_results = manual_results.append(results, ignore_index=True)
-            print(n, lr, e, acc, mse)
-
-manual_results.to_csv('manual_results.csv')
-'''
-
-# Possible best configurations with acc 1 and error ~ 0
-# Neurons: 16, LR: 0.05994842503189409, Epochs: 400. Train acc~0.91. Train mse: 0.0677
-# Neurons: 32, LR: 0.7742636826811278, Epochs: 200.
-# Neurons: 48, LR: 2.782559402207126, Epochs: 200.
-# Neurons: 64, LR: 0.05994842503189409, Epochs: 400.
-# Neurons: 80, LR: 0.7742636826811278, Epochs: 100. 
 
 # Early stop and validation on Keras with best training params
 callbacks = EarlyStopping(monitor='val_loss', patience=25)
@@ -155,11 +122,6 @@ y_pred = np.round(model.predict(X_test))
 print(classification_report(y_test, y_pred))
 print(confusion_matrix(y_test, y_pred))
 
-# Changing threshold to see if 0 recall increases
-y_pred_threshold = model.predict_proba(X_test) > 0.6
-print(classification_report(y_test, y_pred_threshold))
-print(confusion_matrix(y_test, y_pred_threshold))
-
 # Calculating roc_auc curve
 probs = model.predict_proba(X_test)
 print(probs)
@@ -177,3 +139,10 @@ plt.ylim([0, 1])
 plt.ylabel('True Positive Rate')
 plt.xlabel('False Positive Rate')
 plt.show()
+
+# Changing threshold to see if 0 recall increases
+# It does and the other metrics don't fall too much.
+# Sounds like a good ideia to do it
+y_pred_threshold = model.predict_proba(X_test) > 0.6
+print(classification_report(y_test, y_pred_threshold))
+print(confusion_matrix(y_test, y_pred_threshold))
