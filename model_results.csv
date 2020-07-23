@@ -6,3 +6,5 @@ LogisticRegression,"dropping: ['sensor_23', 'sensor_25','sensor_29']","test_size
 LogisticRegression,"dropping: ['sensor_23', 'sensor_25','sensor_29']","test_size=0.3, MinMaxScaler",0.87,0.88,0.96/.086,0.71/.099,0.82/0.92,"'classifier__max_iter': 300, 'classifier__C': 1.0"
 SVM,All,"test_size=0.3, StandarScaler",0.94,0.943,0.97/0.93,0.87/.099,0.92/0.96,"'classifier__kernel': 'rbf', 'classifier__C': 0.31622776601683794"
 SVM,All,"test_size=0.3, MinMaxScaler",0.938,0.934,1.00/0.91,0.82/1.00,0.9/.095,"'classifier__kernel': 'rbf', 'classifier__C': 0.31622776601683794"
+Random Forest,All,test_size=0.3,0.9225,0.953,0.97/0.94,0.89/0.99,0.93/0.96,"'classifier__n_jobs': -1, 'classifier__n_estimators': 450, 'classifier__min_samples_split': 6"
+Random Forest,All,test_size=0.3,0.9267,0.953,0.97/0.94,0.89/0.99,0.93/0.96,"'classifier__n_estimators': 250, 'classifier__min_samples_split': 6, 'classifier__min_samples_leaf': 4"
