@@ -4,3 +4,5 @@ LogisticRegression,"dropping: ['sensor_23', 'sensor_25','sensor_29','sensor_19',
 LogisticRegression,"dropping: ['sensor_23', 'sensor_25','sensor_29']","test_size=0.2, StandarScaler",0.89,0.845,0.89/0.83,0.64/0.96,0.74/0.89,"'classifier__max_iter': 400, 'classifier__C': 0.07498942093324558"
 LogisticRegression,"dropping: ['sensor_23', 'sensor_25','sensor_29']","test_size=0.3, StandarScaler",0.87,0.877,0.93/0.86,0.71/0.97,0.81/0.91,"'classifier__max_iter': 300, 'classifier__C': 0.31622776601683794"
 LogisticRegression,"dropping: ['sensor_23', 'sensor_25','sensor_29']","test_size=0.3, MinMaxScaler",0.87,0.88,0.96/.086,0.71/.099,0.82/0.92,"'classifier__max_iter': 300, 'classifier__C': 1.0"
+SVM,All,"test_size=0.3, StandarScaler",0.94,0.943,0.97/0.93,0.87/.099,0.92/0.96,"'classifier__kernel': 'rbf', 'classifier__C': 0.31622776601683794"
+SVM,All,"test_size=0.3, MinMaxScaler",0.938,0.934,1.00/0.91,0.82/1.00,0.9/.095,"'classifier__kernel': 'rbf', 'classifier__C': 0.31622776601683794"
