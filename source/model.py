@@ -33,7 +33,7 @@ df.drop('sensor_34', inplace=True, axis=1)
 df.drop('sensor_1', inplace=True, axis=1)
 
 # Noise features to remove
-df.drop(['sensor_23', 'sensor_25','sensor_29'], inplace=True, axis=1)
+#df.drop(['sensor_23', 'sensor_25','sensor_29'], inplace=True, axis=1)
 
 # FEATURE ENGINEERING
 
@@ -53,20 +53,20 @@ print(X_train.shape, y_train.shape)
 print(X_test.shape, y_test.shape)
 
 # MODEL
-
+'''
 # Logistic Regresison pipeline
 lr_pipe = Pipeline([
     ('scaler', MinMaxScaler()),
     ('classifier', LogisticRegression())
     ])
 
-param_grid = [{
+lr_param_grid = [{
     'classifier__random_state' : [RANDOM_STATE],
     'classifier__C' : np.logspace(-3, 0, 25),
     'classifier__max_iter' : np.arange(300, 500, 100)    
     }]
 
-lr_cv = RandomizedSearchCV(lr_pipe, param_grid, n_jobs=-1, cv=10, random_state=RANDOM_STATE)
+lr_cv = RandomizedSearchCV(lr_pipe, lr_param_grid, n_jobs=-1, cv=10, random_state=RANDOM_STATE)
 lr_cv.fit(X_train, y_train)
 
 print('-' * 100)
@@ -79,10 +79,32 @@ print('Logistic Regression pipeline test score: {:.3f}'.format(lr_cv.score(X_tes
 y_pred = lr_cv.predict(X_test)
 print(classification_report(y_test, y_pred))
 print(confusion_matrix(y_test, y_pred))
-
+'''
 
 # SVM Pipeline
+svm_pipe = Pipeline([
+    ('scaler', MinMaxScaler()),
+    ('classifier', SVC())
+    ])
 
+svm_param_grid = [{
+    'classifier__random_state' : [RANDOM_STATE],
+    'classifier__C' : np.logspace(-3, 0, 25),
+    'classifier__kernel' : ['linear', 'poly', 'rbf', 'sigmoid']
+    }]
+
+svm_cv = RandomizedSearchCV(svm_pipe, svm_param_grid, n_jobs=-1, cv=10, random_state=RANDOM_STATE)
+svm_cv.fit(X_train, y_train)
+
+print('-' * 100)
+print('SMV pipeline train score: {:.3f}'.format(svm_cv.score(X_train, y_train)))
+print('SMV pipeline validation score: {0}'.format(svm_cv.best_score_))
+print('SMV pipeline best params: {0}'.format(svm_cv.best_params_))
+
+print('SMV pipeline test score: {:.3f}'.format(svm_cv.score(X_test, y_test)))
+y_pred = svm_cv.predict(X_test)
+print(classification_report(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
 
 # Random Forest Classifier
 
