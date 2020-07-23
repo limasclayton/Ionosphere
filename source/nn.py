@@ -20,8 +20,6 @@ from sklearn.metrics import classification_report, auc, roc_curve, confusion_mat
 # caminhos
 dataset_path = "input/ionosphere.data"
 
-#names = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','X','Z','AA','AB','AC','AD','AE','AF','AG','AH','AI','target']
-
 # reading data and giving prefix duo to no column names
 df = pd.read_csv(dataset_path, prefix='sensor_', header=None)
 
@@ -60,10 +58,6 @@ df.drop(['sensor_19', 'sensor_27', 'sensor_31'], inplace=True, axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=123) 
 print(X_train.shape, y_train.shape)
 print(X_test.shape, y_test.shape)
-
-#X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, stratify=y_train_full, test_size=0.1, random_state=123)
-#print(X_train.shape, y_train.shape)
-#print(X_val.shape, y_val.shape)
 
 # MODEL
 # parameters grid to search
