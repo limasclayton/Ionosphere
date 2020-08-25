@@ -12,6 +12,7 @@ from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
+from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, auc, roc_curve, confusion_matrix
 
@@ -30,22 +31,11 @@ df = pd.read_csv(dataset_path, prefix='sensor_', header=None)
 df['good'] = [1 if s == 'g' else 0 for s in df.sensor_34]
 df.drop('sensor_34', inplace=True, axis=1)
 
-'''
-df_scaled = df.drop(['sensor_1','good'], axis=1)
-scaled_values = StandardScaler().fit_transform(df_scaled)
-df_scaled = pd.DataFrame(scaled_values, columns=df_scaled.columns)
-df_scaled['good'] = df.good
-print(df_scaled.info())
-df_scaled.to_csv('ionosphere_scaled.csv', index=False)
-'''
-
 # Dropping column sensor_1 for adding no value the dataset
 df.drop('sensor_1', inplace=True, axis=1)
 
 # Noise features to remove
 #df.drop(['sensor_23', 'sensor_25','sensor_29'], inplace=True, axis=1)
-
-# FEATURE ENGINEERING
 
 # FEATURE SELECTION
 
@@ -63,7 +53,7 @@ print(X_train.shape, y_train.shape)
 print(X_test.shape, y_test.shape)
 
 # MODEL
-'''
+
 # Logistic Regresison pipeline
 lr_pipe = Pipeline([
     ('scaler', MinMaxScaler()),
@@ -86,9 +76,9 @@ print('Logistic Regression pipeline best params: {0}'.format(lr_cv.best_params_)
 print('Logistic Regression pipeline coeficients: {0}'.format(lr_cv.best_estimator_.named_steps['classifier'].coef_))
 
 print('Logistic Regression pipeline test score: {:.3f}'.format(lr_cv.score(X_test, y_test)))
-y_pred = lr_cv.predict(X_test)
-print(classification_report(y_test, y_pred))
-print(confusion_matrix(y_test, y_pred))
+y_pred_lr = lr_cv.predict(X_test)
+print(classification_report(y_test, y_pred_lr))
+print(confusion_matrix(y_test, y_pred_lr))
 
 
 # SVM Pipeline
@@ -112,10 +102,9 @@ print('SMV pipeline validation score: {0}'.format(svm_cv.best_score_))
 print('SMV pipeline best params: {0}'.format(svm_cv.best_params_))
 
 print('SMV pipeline test score: {:.3f}'.format(svm_cv.score(X_test, y_test)))
-y_pred = svm_cv.predict(X_test)
-print(classification_report(y_test, y_pred))
-print(confusion_matrix(y_test, y_pred))
-'''
+y_pred_svm = svm_cv.predict(X_test)
+print(classification_report(y_test, y_pred_svm))
+print(confusion_matrix(y_test, y_pred_svm))
 
 # Random Forest Classifier
 rf_pipe = Pipeline([
@@ -143,8 +132,55 @@ print('RF pipeline validation score: {0}'.format(rf_cv.best_score_))
 print('RF pipeline best params: {0}'.format(rf_cv.best_params_))
 
 print('RF pipeline test score: {:.3f}'.format(rf_cv.score(X_test, y_test)))
-y_pred = rf_cv.predict(X_test)
-print(classification_report(y_test, y_pred))
-print(confusion_matrix(y_test, y_pred))
+y_pred_rf = rf_cv.predict(X_test)
+print(classification_report(y_test, y_pred_rf))
+print(confusion_matrix(y_test, y_pred_rf))
+
+# XGboost Classifier
+param_distributions_xgb = {
+    'learning_rate' : np.linspace(0, 1, 50),
+    'min_split_loss' : np.logspace(1, 3, 10),
+    'max_depth' : np.arange(2, 10, 1),
+    'min_child_weight' : np.arange(0, 5, 1),
+    'subsample' : np.linspace(0.01, 1, 10),
+    'colsample_bytree' : np.linspace(0.01, 1, 10),
+    'colsample_bylevel' : np.linspace(0.01, 1, 10),
+    'colsample_bynode' : np.linspace(0.01, 1, 10)
+}
+
+xgb = XGBClassifier()
+xgb_CV = RandomizedSearchCV(xgb, param_distributions=param_distributions_xgb, n_jobs=-1, cv=10, random_state=RANDOM_STATE)
+xgb_CV.fit(X_train, y_train)
+print('-' * 100)
+print('XGB train score: {:.3f}'.format(xgb_CV.score(X_train, y_train)))
+print('XGB validation score: {0}'.format(xgb_CV.best_score_))
+print('XGB best params: {0}'.format(xgb_CV.best_params_))
+
+print('XGB test score: {:.3f}'.format(xgb_CV.score(X_test, y_test)))
+y_pred_xgb = xgb_CV.predict(X_test)
+print(classification_report(y_test, y_pred_xgb))
+print(confusion_matrix(y_test, y_pred_xgb))
+
 
 # HistGradientBoost Classifier
+
+param_distributions_hgb = {
+    'learning_rate' : np.logspace(-4, 0, 25),
+    'max_iter' : np.arange(100, 500, 50),
+    'min_samples_leaf' : np.arange(10, 50, 5),
+    'max_leaf_nodes' : np.arange(10, 50, 5),
+    'l2_regularization' : np.linspace(0, 1, 5)    
+}
+
+hgb = HistGradientBoostingClassifier()
+hgb_CV = RandomizedSearchCV(hgb, param_distributions=param_distributions_hgb, n_jobs=-1, cv=10, random_state=RANDOM_STATE)
+hgb_CV.fit(X_train, y_train)
+print('-' * 100)
+print('HGB train score: {:.3f}'.format(hgb_CV.score(X_train, y_train)))
+print('HGB validation score: {0}'.format(hgb_CV.best_score_))
+print('HGB best params: {0}'.format(hgb_CV.best_params_))
+
+print('HGB test score: {:.3f}'.format(hgb_CV.score(X_test, y_test)))
+y_pred_hgb = hgb_CV.predict(X_test)
+print(classification_report(y_test, y_pred_hgb))
+print(confusion_matrix(y_test, y_pred_hgb))
