@@ -14,7 +14,7 @@ Link: [Ionosphere Data Set](https://archive.ics.uci.edu/ml/datasets/Ionosphere)
 Predict whether a structure in the ionosphere is "good" or "bad" given the data collected by sensors.
 
 ### Output
-source/EDA.py has the exploratory data analysis done in the dataset, changing on target variable for model interpretability feature selection based correlation between features and conclusions about the use of that features on the model.
+source/EDA.py has the exploratory data analysis done in the dataset, changing on target variable for model interpretability, feature selection based on correlation between features and conclusions about the use of that features on the model.
 
 source/model.py has the feature selection and the pipelines tested on the data.
 
